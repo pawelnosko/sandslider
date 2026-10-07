@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SandSlider</title>
+  <style>
+    :root {
+      --bg: #050608;
+      --fg: #f3eefc;
+      --muted: rgba(230, 220, 255, 0.72);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: "Segoe UI", system-ui, sans-serif;
+    }
+
+    #app {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    #stage {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+    }
+
+    .slide-copy {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 0.65rem;
+      padding: clamp(1.25rem, 4vw, 2.5rem) 4.5rem;
+      background: radial-gradient(
+        ellipse 70% 55% at 50% 50%,
+        rgba(20, 10, 40, 0.55) 0%,
+        rgba(5, 6, 8, 0.12) 70%,
+        transparent 100%
+      );
+      pointer-events: none;
+    }
+
+    .slide-header,
+    .slide-subheader,
+    .slide-cta {
+      opacity: 0;
+      transform: translateY(18px) scale(0.94);
+      will-change: opacity, transform;
+    }
+
+    .slide-copy.is-in .slide-header {
+      animation: copyIn 0.85s cubic-bezier(0.22, 1, 0.36, 1) 2.2s forwards;
+    }
+
+    .slide-copy.is-in .slide-subheader {
+      animation: copyIn 0.85s cubic-bezier(0.22, 1, 0.36, 1) 2.5s forwards;
+    }
+
+    .slide-copy.is-in .slide-cta {
+      animation: copyIn 0.85s cubic-bezier(0.22, 1, 0.36, 1) 2.8s forwards;
+    }
+
+    .slide-copy.is-out .slide-header,
+    .slide-copy.is-out .slide-subheader,
+    .slide-copy.is-out .slide-cta {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+
+    .slide-copy.is-out .slide-header {
+      animation: copyOut 0.42s ease 0s forwards;
+    }
+
+    .slide-copy.is-out .slide-subheader {
+      animation: copyOut 0.42s ease 0.06s forwards;
+    }
+
+    .slide-copy.is-out .slide-cta {
+      animation: copyOut 0.42s ease 0.12s forwards;
+    }
+
+    @keyframes copyIn {
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    @keyframes copyOut {
+      to {
+        opacity: 0;
+        transform: translateY(-16px) scale(0.96);
+      }
+    }
+
+    .slide-header {
+      margin: 0;
+      font-size: clamp(2rem, 5.5vw, 3.4rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1.05;
+      text-shadow: 0 4px 28px rgba(0, 0, 0, 0.55);
+      max-width: 18ch;
+    }
+
+    .slide-subheader {
+      margin: 0;
+      font-size: clamp(1.05rem, 2.2vw, 1.35rem);
+      color: var(--muted);
+      line-height: 1.4;
+      max-width: 34ch;
+      text-shadow: 0 2px 14px rgba(0, 0, 0, 0.45);
+    }
+
+    .slide-header:empty,
+    .slide-subheader:empty,
+    .slide-cta[hidden] {
+      display: none !important;
+    }
+
+    .slide-cta {
+      pointer-events: auto;
+      margin-top: 0.55rem;
+      appearance: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid rgba(196, 181, 253, 0.75);
+      background: linear-gradient(145deg, #7c3aed 0%, #5b21b6 55%, #4c1d95 100%);
+      color: #f5f3ff;
+      text-decoration: none;
+      padding: 0.9rem 1.45rem;
+      font: inherit;
+      font-size: clamp(0.95rem, 1.4vw, 1.05rem);
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      box-shadow:
+        0 0 0 1px rgba(139, 92, 246, 0.25),
+        0 10px 28px rgba(139, 92, 246, 0.45);
+      transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+    }
+
+    .slide-cta:hover {
+      border-color: #ddd6fe;
+      background: linear-gradient(145deg, #8b5cf6 0%, #6d28d9 55%, #5b21b6 100%);
+      box-shadow:
+        0 0 0 1px rgba(167, 139, 250, 0.4),
+        0 12px 32px rgba(139, 92, 246, 0.55);
+      transform: translateY(-1px);
+    }
+
+    @media (max-width: 640px) {
+      .slide-copy {
+        padding-left: 3.2rem;
+        padding-right: 3.2rem;
+      }
+    }
+
+    #loader {
+      position: absolute;
+      inset: 0;
+      z-index: 4;
+      display: grid;
+      place-items: center;
+      background: var(--bg);
+      transition: opacity 0.5s ease;
+    }
+
+    #loader.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div id="loader">Loading…</div>
+    <div id="stage"></div>
+
+    <div class="slide-copy" id="slideCopy" hidden>
+      <h2 class="slide-header" id="slideHeader"></h2>
+      <p class="slide-subheader" id="slideSubheader"></p>
+      <a class="slide-cta" id="slideCta" hidden></a>
+    </div>
+  </div>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js"
+    }
+  }
+  </script>
+
+  <script type="module">
+    if (location.protocol === 'file:') {
+      document.getElementById('loader').innerHTML = `
+        <div style="max-width:34rem;padding:1.5rem;text-align:left;line-height:1.5">
+          <strong>Nie otwieraj przez file://</strong>
+          <p style="margin:0.75rem 0 0;color:rgba(232,228,220,0.7)">
+            Uruchom lokalny serwer w tym folderze, np.
+            <code style="color:#9ecbff">python3 -m http.server 5173</code>
+            i wejdź na
+            <a href="http://127.0.0.1:5173/" style="color:#9ecbff">http://127.0.0.1:5173/</a>
+          </p>
+        </div>
+      `;
+      throw new Error('Wymagany HTTP');
+    }
+
+    import { SandSlider } from './sandslider.js';
+
+    const SLIDES = [
+      {
+        src: './images/sandpixel.webp',
+        header: 'Sandpixel',
+        subheader: 'The image breaks into sand and reveals the next slide.',
+        cta: { label: 'See the effect', href: '#demo' },
+      },
+      {
+        src: './images/sbider-bot.webp',
+        header: 'Sbider Bot',
+        subheader: 'Automation and bots built for e‑commerce.',
+        cta: { label: 'Learn more', href: '#sbider' },
+      },
+      {
+        src: './images/geomap.webp',
+        header: 'Geomap',
+        subheader: 'Maps and locations in one clear view.',
+        cta: { label: 'Open the map', href: '#geomap' },
+      },
+      {
+        src: './images/opencart-3-speed.webp',
+        header: 'OpenCart 3 Speed',
+        subheader: 'A faster store without rebuilding from scratch.',
+        cta: { label: 'Speed up your store', href: '#speed' },
+      },
+      {
+        src: './images/8-may-2026.webp',
+        header: '8 May 2026',
+        subheader: 'The next update is on the horizon.',
+        cta: { label: 'Check the date', href: '#may' },
+      },
+    ];
+
+    const slideCopy = document.getElementById('slideCopy');
+    const slideHeader = document.getElementById('slideHeader');
+    const slideSubheader = document.getElementById('slideSubheader');
+    const slideCta = document.getElementById('slideCta');
+
+    let copyIndex = -1;
+    let copySeq = 0;
+    const COPY_OUT_MS = 560;
+
+    function applySlideText(slide) {
+      slideHeader.textContent = slide?.header || '';
+      slideSubheader.textContent = slide?.subheader || '';
+
+      if (slide?.cta?.label) {
+        slideCta.hidden = false;
+        slideCta.textContent = slide.cta.label;
+        slideCta.href = slide.cta.href || '#';
+        if (slide.cta.target) slideCta.target = slide.cta.target;
+        else slideCta.removeAttribute('target');
+      } else {
+        slideCta.hidden = true;
+        slideCta.removeAttribute('href');
+        slideCta.textContent = '';
+      }
+    }
+
+    function contentIsVisible() {
+      const nodes = [slideHeader, slideSubheader, slideCta].filter(
+        (el) => el && !el.hidden && (el.textContent || '').trim()
+      );
+      if (!nodes.length) return false;
+      return nodes.some((el) => parseFloat(getComputedStyle(el).opacity) > 0.08);
+    }
+
+    function playCopyOut() {
+      return new Promise((resolve) => {
+        if (!contentIsVisible()) {
+          slideCopy.classList.remove('is-in', 'is-out');
+          resolve();
+          return;
+        }
+        slideCopy.classList.remove('is-in');
+        slideCopy.classList.add('is-out');
+        window.setTimeout(() => {
+          slideCopy.classList.remove('is-out');
+          resolve();
+        }, COPY_OUT_MS);
+      });
+    }
+
+    async function setSlideCopy(slide, { animate = true } = {}) {
+      const index = slide?.index ?? -1;
+      if (animate && index === copyIndex && slideCopy.classList.contains('is-in')) {
+        return;
+      }
+
+      const seq = ++copySeq;
+
+      if (animate && copyIndex >= 0) {
+        await playCopyOut();
+        if (seq !== copySeq) return;
+      }
+
+      copyIndex = index;
+      applySlideText(slide);
+
+      if (!animate) {
+        slideCopy.classList.remove('is-out');
+        slideCopy.classList.add('is-in');
+        return;
+      }
+
+      slideCopy.classList.remove('is-in', 'is-out');
+      void slideCopy.offsetWidth;
+      requestAnimationFrame(() => {
+        if (seq !== copySeq) return;
+        slideCopy.classList.add('is-in');
+      });
+    }
+
+    try {
+      const slider = await SandSlider.create(document.getElementById('stage'), {
+        images: SLIDES,
+        holdMs: 3500,
+        maxLongSide: 720,
+        autoplay: true,
+        loop: true,
+        fit: 'contain',
+        nav: true,
+        pagination: true,
+        fitPadding: { top: 24, right: 24, bottom: 48, left: 24 },
+        background: 0x050608,
+        onTransition: (_from, _to, _fromSlide, toSlide) => {
+          void setSlideCopy(toSlide, { animate: true });
+        },
+      });
+
+      // Put slide copy inside plugin frame (under nav buttons)
+      if (slider.ui?.frame) {
+        slider.ui.frame.prepend(slideCopy);
+        slideCopy.hidden = false;
+      }
+
+      void setSlideCopy(slider.currentSlide, { animate: true });
+      document.getElementById('loader').classList.add('hidden');
+    } catch (err) {
+      console.error(err);
+      document.getElementById('loader').textContent =
+        'Błąd ładowania: ' + (err?.message || err);
+    }
+  </script>
+</body>
+</html>
