@@ -353,7 +353,7 @@ Then open:
 More information, documentation and the full tutorial are available on the project page:
 </p>
 <p>
-<a>
+<a href="https://pawelnosko.com/js-frontend-tools/sandslider-building-a-webgl-image-slider-with-sand-blow-transitions-in-three-js">
 SandSlider — project page
 </a>
 </p>
